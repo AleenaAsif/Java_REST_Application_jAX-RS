@@ -1,69 +1,256 @@
 package com.example.javarestappjaxrs;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import javax.ws.rs.core.HttpHeaders;
+
 
 @Path("/customers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CustomerResource {
-    private static final List<Customers> customers = new ArrayList<>();
 
-    static {
-        // Adding sample customer data
-        customers.add(new Customers(1, "Alice"));
-        customers.add(new Customers(2, "Bob"));
-    }
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/restappdata";
+    private static final String DB_USERNAME = "root";
+    private static final String DB_PASSWORD = "root";
+
+
+//    private static final String HARD_CODED_USERNAME = "hardcoded_user";
+//    private static final String HARD_CODED_PASSWORD = "hardcoded_password";
+//    @GET
+//    public Response getAllCustomers(@HeaderParam(HttpHeaders.AUTHORIZATION) String authHeader) {
+//        // Check if the Authorization header is provided
+//        if (authHeader == null || !authHeader.toLowerCase().startsWith("basic ")) {
+//            // Unauthorized access: Return 401 Unauthorized status
+//            return Response.status(Response.Status.UNAUTHORIZED)
+//                    .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Realm Name\"")
+//                    .build();
+//        }
+//
+//        // Decode and parse the username and password from the Authorization header
+//        String credentials = authHeader.substring("basic ".length()).trim();
+//        byte[] decodedCredentials = Base64.getDecoder().decode(credentials);
+//        String decodedString = new String(decodedCredentials, StandardCharsets.UTF_8);
+//        String[] usernameAndPassword = decodedString.split(":", 2);
+//        String username = usernameAndPassword[0];
+//        String password = usernameAndPassword[1];
+//
+//        // Check if the username and password match the hardcoded credentials
+//        if (!username.equals(HARD_CODED_USERNAME) || !password.equals(HARD_CODED_PASSWORD)) {
+//            // Unauthorized access: Return 401 Unauthorized status
+//            return Response.status(Response.Status.UNAUTHORIZED)
+//                    .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Realm Name\"")
+//                    .build();
+//        }
+//
+//        // Valid credentials: Proceed with fetching customers
+//        List<Customers> customers = new ArrayList<>();
+//        Connection connection = null;
+//        PreparedStatement statement = null;
+//        ResultSet resultSet = null;
+//
+//        try {
+//            // Load the MySQL JDBC driver
+//            Class.forName("com.mysql.cj.jdbc.Driver");
+//
+//            // Establish a database connection
+//            connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+//
+//            // Create a prepared statement for the SELECT query
+//            statement = connection.prepareStatement("SELECT * FROM customers");
+//
+//            // Execute the query and retrieve the result set
+//            resultSet = statement.executeQuery();
+//
+//            // Iterate through the result set and populate the customers list
+//            while (resultSet.next()) {
+//                int id = resultSet.getInt("id");
+//                String name = resultSet.getString("name");
+//                customers.add(new Customers(id, name));
+//            }
+//
+//        } catch (ClassNotFoundException | SQLException e) {
+//            e.printStackTrace();
+//        } finally {
+//
+//            try {
+//                if (resultSet != null) {
+//                    resultSet.close();
+//                }
+//                if (statement != null) {
+//                    statement.close();
+//                }
+//                if (connection != null) {
+//                    connection.close();
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        return Response.ok(customers).build();
+//    }
 
 
     @GET
-    public List<Customers> getAllCustomers() {
-        return customers;
-    }
+    public Response getAllCustomers(@HeaderParam(HttpHeaders.AUTHORIZATION) String authHeader) {
+        try {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
 
+            // Check if the Authorization header is provided
+            if (authHeader == null || !authHeader.toLowerCase().startsWith("basic ")) {
+            // Unauthorized access: Return 401 Unauthorized status
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Realm Name\"")
+                    .build();
+        }
+
+        // Decode and parse the username and password from the Authorization header
+        String credentials = authHeader.substring("basic ".length()).trim();
+        byte[] decodedCredentials = Base64.getDecoder().decode(credentials);
+        String decodedString = new String(decodedCredentials, StandardCharsets.UTF_8);
+        String[] usernameAndPassword = decodedString.split(":", 2);
+        String username = usernameAndPassword[0];
+        String password = usernameAndPassword[1];
+
+            // Check if the username and password match the credentials from the database
+            try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+                 PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
+
+                statement.setString(1, username);
+                statement.setString(2, password);
+                ResultSet resultSet = statement.executeQuery();
+
+                if (!resultSet.next()) {
+                    // Unauthorized access: Prompt the user to enter correct credentials
+                    return Response.status(Response.Status.UNAUTHORIZED)
+                            .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Realm Name\"")
+                            .entity("Invalid credentials. Please enter your correct username and password.")
+                            .build();
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return Response.serverError().build();
+            }
+
+            // Valid credentials: Proceed with fetching customers
+            List<Customers> customers = new ArrayList<>();
+            Connection connection = null;
+            PreparedStatement statement = null;
+            ResultSet resultSet = null;
+
+            try {
+                // Load the MySQL JDBC driver
+                Class.forName("com.mysql.cj.jdbc.Driver");
+
+                // Establish a database connection
+                connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+
+                // Create a prepared statement for the SELECT query
+                statement = connection.prepareStatement("SELECT * FROM customers");
+
+                // Execute the query and retrieve the result set
+                resultSet = statement.executeQuery();
+
+                // Iterate through the result set and populate the customers list
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String name = resultSet.getString("name");
+                    customers.add(new Customers(id, name));
+                }
+
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            } finally {
+                // Close the resources in a finally block to ensure they are closed
+                try {
+                    if (resultSet != null) {
+                        resultSet.close();
+                    }
+                    if (statement != null) {
+                        statement.close();
+                    }
+                    if (connection != null) {
+                        connection.close();
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return Response.ok(customers).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.serverError().build();
+        }
+    }
     @POST
     public Response addCustomer(Customers customer) {
-        customer.setId(generateCustomerId());
-        customers.add(customer);
-        return Response.status(Response.Status.CREATED).entity(customer).build();
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO customers (name) VALUES (?) ")) {
+
+            statement.setString(1, customer.getName());
+            statement.executeUpdate();
+
+            return Response.status(Response.Status.CREATED).entity(customer).build();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Response.serverError().build();
+        }
     }
 
     @PUT
     @Path("/{id}")
     public Response updateCustomer(@PathParam("id") int id, Customers updatedCustomer) {
-        Customers existingCustomer = findCustomerById(id);
-        if (existingCustomer != null) {
-            existingCustomer.setName(updatedCustomer.getName());
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+             PreparedStatement statement = connection.prepareStatement("UPDATE customers SET name = ? WHERE id = ?")) {
 
-            return Response.ok(existingCustomer).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
-    private Customers findCustomerById(int id) {
-        for (Customers customer : customers) {
-            if (customer.getId() == id) {
-                return customer;
+            statement.setString(1, updatedCustomer.getName());
+            statement.setInt(2, id);
+            int updatedRowCount = statement.executeUpdate();
+            if (updatedRowCount > 0) {
+                return Response.ok(updatedCustomer).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Response.serverError().build();
         }
-        return null;
     }
 
     @DELETE
     @Path("/{id}")
     public Response deleteCustomer(@PathParam("id") int id) {
-        Customers customer = findCustomerById(id);
-        if (customer != null) {
-            customers.remove(customer);
-            return Response.ok().build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+             PreparedStatement statement = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
+
+            statement.setInt(1, id);
+            int deletedRowCount = statement.executeUpdate();
+            if (deletedRowCount > 0) {
+                return Response.ok().build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Response.serverError().build();
         }
     }
-    private int generateCustomerId() {
-        return customers.size() + 1;
-    }
-
 }
