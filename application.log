@@ -2,3 +2,9 @@
 2023-08-10 20:09:24.953 _GET request received
 2023-08-10 20:09:24.958 _API Request: GET /customers
 2023-08-10 20:09:26.317 _customers sent
+2023-08-10 20:13:48.113 _API Request: POST /customers
+2023-08-10 20:13:49.498 _Added customer: com.example.javarestappjaxrs.Customers@23afe1fd
+2023-08-10 20:14:12.376 _API Request: PUT /customers/18
+2023-08-10 20:14:12.775 _Updated customer: com.example.javarestappjaxrs.Customers@1352f15d
+2023-08-10 20:14:27.258 _API Request: DELETE /customers/18
+2023-08-10 20:14:27.394 _Deleted customer with ID: 18
