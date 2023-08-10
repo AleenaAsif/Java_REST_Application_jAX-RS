@@ -3,13 +3,9 @@ package com.example.javarestappjaxrs;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Base64;
 import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.HttpHeaders;
@@ -201,11 +197,23 @@ public class CustomerResource {
     }
     @POST
     public Response addCustomer(Customers customer) {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO customers (name) VALUES (?) ")) {
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO customers (name) VALUES (?) ",
+                     Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, customer.getName());
             statement.executeUpdate();
+
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int generatedId = generatedKeys.getInt(1);
+                customer.setId(generatedId); // Set the generated ID in the Customers object
+            }
 
             return Response.status(Response.Status.CREATED).entity(customer).build();
 
