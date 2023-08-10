@@ -1,1 +1,4 @@
 2023-08-10 20:00:35.618 _Added customer: com.example.javarestappjaxrs.Customers@1103ac29
+2023-08-10 20:09:24.953 _GET request received
+2023-08-10 20:09:24.958 _API Request: GET /customers
+2023-08-10 20:09:26.317 _customers sent

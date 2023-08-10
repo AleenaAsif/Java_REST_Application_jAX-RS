@@ -29,6 +29,7 @@ public class CustomerResource {
     @GET
     public Response getAllCustomers(@HeaderParam(HttpHeaders.AUTHORIZATION) String authHeader) {
         logger.info("GET request received");
+        logger.info("API Request: GET /customers");
         try {
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
@@ -133,6 +134,7 @@ public class CustomerResource {
     }
     @POST
     public Response addCustomer(Customers customer) {
+        logger.info("API Request: POST /customers");
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
@@ -165,6 +167,7 @@ public class CustomerResource {
     @PUT
     @Path("/{id}")
     public Response updateCustomer(@PathParam("id") int id, Customers updatedCustomer) {
+        logger.info("API Request: PUT /customers/{}", id);
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement("UPDATE customers SET name = ? WHERE id = ?")) {
 
@@ -188,6 +191,7 @@ public class CustomerResource {
     @DELETE
     @Path("/{id}")
     public Response deleteCustomer(@PathParam("id") int id) {
+        logger.info("API Request: DELETE /customers/{}", id);
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
 
