@@ -68,7 +68,7 @@ public class CustomerResource {
                     return Response.status(Response.Status.UNAUTHORIZED)
                             .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Realm Name\"")
                             .entity("Invalid credentials. Please enter your correct username and password.")
-                            .build();
+                            .build(); //
                 }
 
             } catch (SQLException e) {
