@@ -17,7 +17,7 @@ import javax.ws.rs.core.HttpHeaders;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CustomerResource {
-    private static final Logger logger = LoggerFactory.getLogger(CustomerResource.class);
+    private static final Logger logger = LoggerFactory.getLogger("FILE");
 
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restappdata";
     private static final String DB_USERNAME = "root";
@@ -28,6 +28,7 @@ public class CustomerResource {
 
     @GET
     public Response getAllCustomers(@HeaderParam(HttpHeaders.AUTHORIZATION) String authHeader) {
+        logger.info("GET request received");
         try {
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
